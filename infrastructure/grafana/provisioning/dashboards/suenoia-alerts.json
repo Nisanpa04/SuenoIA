@@ -1,0 +1,250 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "orange", "value": 5},
+              {"color": "red", "value": 10}
+            ]
+          }
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {"calcs": ["sum"], "values": false}
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '1m') AS \"time\", COUNT(*) AS \"alertas\" FROM alerts WHERE user_id = 1 AND $__timeFilter(created_at) GROUP BY 1 ORDER BY 1;",
+          "refId": "A"
+        }
+      ],
+      "title": "Total alertas en ventana",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}]}
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {"calcs": ["sum"], "values": false}
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '1m') AS \"time\", COUNT(*) AS \"critical\" FROM alerts WHERE user_id = 1 AND severity = 'critical' AND $__timeFilter(created_at) GROUP BY 1 ORDER BY 1;",
+          "refId": "A"
+        }
+      ],
+      "title": "🔴 Críticas",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "orange", "value": null}]}
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {"calcs": ["sum"], "values": false}
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '1m') AS \"time\", COUNT(*) AS \"warnings\" FROM alerts WHERE user_id = 1 AND severity = 'warning' AND $__timeFilter(created_at) GROUP BY 1 ORDER BY 1;",
+          "refId": "A"
+        }
+      ],
+      "title": "🟡 Warnings",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {"calcs": ["sum"], "values": false}
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '1m') AS \"time\", COUNT(*) AS \"info\" FROM alerts WHERE user_id = 1 AND severity = 'info' AND $__timeFilter(created_at) GROUP BY 1 ORDER BY 1;",
+          "refId": "A"
+        }
+      ],
+      "title": "🔵 Info",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisCenteredZero": false,
+            "axisLabel": "alertas/min",
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "opacity",
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {"group": "A", "mode": "normal"}
+          }
+        },
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "critical"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]},
+          {"matcher": {"id": "byName", "options": "warning"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]},
+          {"matcher": {"id": "byName", "options": "info"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}]}
+        ]
+      },
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 4},
+      "id": 5,
+      "options": {
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom"},
+        "tooltip": {"mode": "multi"}
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(created_at, '1m') AS \"time\", severity AS metric, COUNT(*) AS value FROM alerts WHERE user_id = 1 AND $__timeFilter(created_at) GROUP BY 1, severity ORDER BY 1;",
+          "refId": "A"
+        }
+      ],
+      "title": "Línea temporal de alertas (por severidad)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"}
+        }
+      },
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 4},
+      "id": 6,
+      "options": {
+        "displayLabels": ["percent", "name"],
+        "legend": {"displayMode": "list", "placement": "right", "showLegend": true, "values": ["value"]},
+        "pieType": "pie",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT category AS metric, COUNT(*)::int AS value FROM alerts WHERE user_id = 1 AND $__timeFilter(created_at) GROUP BY category ORDER BY value DESC;",
+          "refId": "A"
+        }
+      ],
+      "title": "Alertas por categoría",
+      "type": "piechart"
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {"align": "left", "filterable": true},
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "severity"},
+            "properties": [
+              {"id": "custom.cellOptions", "value": {"type": "color-background"}},
+              {"id": "mappings", "value": [
+                {"type": "value", "options": {"critical": {"color": "red", "index": 0}, "warning": {"color": "orange", "index": 1}, "info": {"color": "blue", "index": 2}}}
+              ]}
+            ]
+          }
+        ]
+      },
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 13},
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [{"desc": true, "displayName": "created_at"}]
+      },
+      "pluginVersion": "10.4.2",
+      "targets": [
+        {
+          "datasource": {"type": "postgres", "uid": "TimescaleDB"},
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT created_at, severity, category, title, text FROM alerts WHERE user_id = 1 AND $__timeFilter(created_at) ORDER BY created_at DESC LIMIT 100;",
+          "refId": "A"
+        }
+      ],
+      "title": "🚨 Detalle completo de alertas",
+      "type": "table"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["suenoia", "alerts"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "🚨 SueñoIA — Alerts Center",
+  "uid": "suenoia-alerts",
+  "version": 1,
+  "weekStart": ""
+}

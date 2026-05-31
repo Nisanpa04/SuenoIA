@@ -1,0 +1,28 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Node
+node_modules/
+dist/
+
+# Data / modelos
+data/raw/
+models/*.pkl
+*.parquet
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log

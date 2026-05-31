@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    @apply font-sans text-slate-800 antialiased;
+    background:
+      radial-gradient(ellipse at top, rgba(139, 92, 246, 0.15), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(124, 58, 237, 0.10), transparent 50%),
+      linear-gradient(180deg, #fafafa 0%, #f5f3ff 100%);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl p-6 shadow-soft border border-night-100;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl
+           bg-gradient-to-r from-night-600 to-night-500 text-white font-semibold
+           shadow-soft transition-all hover:shadow-glow hover:-translate-y-0.5
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm
+           text-slate-600 hover:bg-night-50 hover:text-night-700 transition-colors;
+  }
+  .input {
+    @apply w-full px-4 py-2 rounded-xl border border-slate-200 bg-white
+           focus:outline-none focus:ring-2 focus:ring-night-400;
+  }
+  .label {
+    @apply block text-sm font-medium text-slate-700 mb-1;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border;
+  }
+  .tab {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer;
+  }
+  .tab-active {
+    @apply bg-night-600 text-white shadow-soft;
+  }
+  .tab-inactive {
+    @apply bg-white text-slate-600 border border-night-100 hover:bg-night-50;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeIn 0.3s ease-out both; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.pulse-dot { animation: pulse-dot 1.5s infinite; }

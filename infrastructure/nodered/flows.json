@@ -1,0 +1,56 @@
+[
+    {
+        "id": "tab-mqtt-monitor",
+        "type": "tab",
+        "label": "MQTT Monitor",
+        "disabled": false,
+        "info": "Suscripción a todos los topics de wearable para visualizar el flujo de datos en el debug sidebar."
+    },
+    {
+        "id": "mqtt-broker-internal",
+        "type": "mqtt-broker",
+        "name": "Mosquitto",
+        "broker": "mosquitto",
+        "port": "1883",
+        "clientid": "node-red-monitor",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true
+    },
+    {
+        "id": "sub-all-wearable",
+        "type": "mqtt in",
+        "z": "tab-mqtt-monitor",
+        "name": "Todas las métricas del wearable",
+        "topic": "suenoia/wearable/+",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "mqtt-broker-internal",
+        "x": 180, "y": 120,
+        "wires": [["fn-summarize"]]
+    },
+    {
+        "id": "fn-summarize",
+        "type": "function",
+        "z": "tab-mqtt-monitor",
+        "name": "Extrae metric + value",
+        "func": "const p = msg.payload || {};\nconst metric = (msg.topic || '').split('/').pop();\nmsg.payload = {\n  topic: msg.topic,\n  metric: metric,\n  type: p.type,\n  value: p.value,\n  user_id: p.user_id,\n  unit: p.unit,\n  phase: p.metadata && p.metadata.phase,\n  ts: p.start_date,\n};\nreturn msg;",
+        "outputs": 1,
+        "x": 470, "y": 120,
+        "wires": [["debug-sidebar"]]
+    },
+    {
+        "id": "debug-sidebar",
+        "type": "debug",
+        "z": "tab-mqtt-monitor",
+        "name": "Sidebar debug",
+        "active": true,
+        "tosidebar": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 720, "y": 120,
+        "wires": []
+    }
+]

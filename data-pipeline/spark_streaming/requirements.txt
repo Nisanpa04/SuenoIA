@@ -1,0 +1,5 @@
+pyspark==3.5.0
+elasticsearch==8.13.2
+psycopg2-binary==2.9.9
+kafka-python-ng==2.2.2
+python-dateutil==2.9.0

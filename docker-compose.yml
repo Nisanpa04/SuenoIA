@@ -1,0 +1,228 @@
+# =============================================================================
+#  SueñoIA v2 — Plataforma IoT de salud del sueño
+#  Stack completo: Kafka + MQTT + Node-RED + Elastic + Grafana + TimescaleDB
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # ZOOKEEPER — coordinador requerido por Kafka
+  # ---------------------------------------------------------------------------
+  zookeeper:
+    image: confluentinc/cp-zookeeper:${CONFLUENT_VERSION}
+    container_name: suenoia-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: ["CMD-SHELL", "echo srvr | nc localhost 2181 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - suenoia-net
+
+  # ---------------------------------------------------------------------------
+  # KAFKA — mensajería para flujos de datos biométricos
+  # ---------------------------------------------------------------------------
+  kafka:
+    image: confluentinc/cp-kafka:${CONFLUENT_VERSION}
+    container_name: suenoia-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "19092:9092"   # 19092 host → 9092 contenedor (9092 estaba ocupado)
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:19092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server kafka:29092 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - suenoia-net
+
+  # ---------------------------------------------------------------------------
+  # KAFKA UI — explorador visual de topics y mensajes
+  # ---------------------------------------------------------------------------
+  kafka-ui:
+    image: provectuslabs/kafka-ui:${KAFKA_UI_VERSION}
+    container_name: suenoia-kafka-ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "18080:8080"   # 18080 host → 8080 contenedor (8080 muy común)
+    environment:
+      KAFKA_CLUSTERS_0_NAME: suenoia-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    networks:
+      - suenoia-net
+
+  # ---------------------------------------------------------------------------
+  # MOSQUITTO — broker MQTT (entrada de datos desde wearables / RPi)
+  # ---------------------------------------------------------------------------
+  mosquitto:
+    image: eclipse-mosquitto:${MOSQUITTO_VERSION}
+    container_name: suenoia-mosquitto
+    ports:
+      - "1883:1883"   # MQTT estándar
+      - "9001:9001"   # MQTT sobre WebSocket
+    volumes:
+      - ./infrastructure/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    networks:
+      - suenoia-net
+
+  # ---------------------------------------------------------------------------
+  # NODE-RED — gateway visual MQTT → Kafka
+  # ---------------------------------------------------------------------------
+  node-red:
+    image: nodered/node-red:${NODE_RED_VERSION}
+    container_name: suenoia-nodered
+    ports:
+      - "11880:1880"   # 11880 host → 1880 contenedor
+    volumes:
+      - nodered_data:/data
+    environment:
+      TZ: Europe/Madrid
+    depends_on:
+      - mosquitto
+      - kafka
+    networks:
+      - suenoia-net
+
+  # ---------------------------------------------------------------------------
+  # ELASTICSEARCH — almacén de búsqueda y series temporales
+  # ---------------------------------------------------------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
+    container_name: suenoia-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - "ES_JAVA_OPTS=${ES_JAVA_OPTS}"
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "19200:9200"   # 19200 host → 9200 contenedor
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - suenoia-net
+
+  # ---------------------------------------------------------------------------
+  # KIBANA — UI de Elasticsearch para administradores/devs
+  # ---------------------------------------------------------------------------
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${ELASTIC_VERSION}
+    container_name: suenoia-kibana
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    ports:
+      - "15601:5601"   # 15601 host → 5601 contenedor (5601 estaba ocupado)
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      SERVER_PUBLICBASEURL: http://localhost:15601
+    networks:
+      - suenoia-net
+
+  # ---------------------------------------------------------------------------
+  # GRAFANA — dashboards de salud del sueño
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:${GRAFANA_VERSION}
+    container_name: suenoia-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_INSTALL_PLUGINS: grafana-clock-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - elasticsearch
+    networks:
+      - suenoia-net
+
+  # ---------------------------------------------------------------------------
+  # TIMESCALEDB — PostgreSQL con extensión time-series
+  # Almacena: predicciones, usuarios, ventanas de series, MLflow tracking
+  # ---------------------------------------------------------------------------
+  timescaledb:
+    image: timescale/timescaledb:${TIMESCALE_VERSION}
+    container_name: suenoia-timescaledb
+    ports:
+      - "5433:5432"   # 5433 host → 5432 contenedor (5432 ya lo usa Postgres del Mac)
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./infrastructure/timescaledb/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - suenoia-net
+
+  # ---------------------------------------------------------------------------
+  # MLFLOW — tracking de experimentos ML
+  # ---------------------------------------------------------------------------
+  mlflow:
+    build:
+      context: ./infrastructure/mlflow
+    container_name: suenoia-mlflow
+    ports:
+      - "5500:5000"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    environment:
+      MLFLOW_BACKEND_STORE_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/mlflow
+      MLFLOW_ARTIFACTS_DESTINATION: /mlflow/artifacts
+    volumes:
+      - mlflow_artifacts:/mlflow/artifacts
+    networks:
+      - suenoia-net
+
+# =============================================================================
+networks:
+  suenoia-net:
+    name: suenoia-net
+    driver: bridge
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+  nodered_data:
+  elasticsearch_data:
+  grafana_data:
+  timescaledb_data:
+  mlflow_artifacts:
