@@ -108,14 +108,14 @@ suenoia-v2/
 
 ---
 
-## 🗺️ Hoja de ruta (24 h)
+## 🗺️ Hoja de ruta 
 
-- [x] **Bloque A** — Infraestructura Docker (3 h)
-- [ ] Bloque B — Simulador HealthKit (3 h)
-- [ ] Bloque C — Spark Streaming + ingesta Elasticsearch (4 h)
-- [ ] Bloque D — IA conversacional (Anthropic API) (3 h)
-- [ ] Bloque E — Notificaciones tiempo real (WebSocket + Telegram bot) (2 h)
-- [ ] Bloque F — ML con PySpark MLlib (3 h)
-- [ ] Bloque G — Dashboards Grafana (2 h)
-- [ ] Bloque H — Frontend + integración (2 h)
-- [ ] Bloque I — Memoria académica (3 h)
+- [x] **Bloque A** — Infraestructura Docker 
+- [ ] Bloque B — Simulador HealthKit 
+- [ ] Bloque C — Spark Streaming + ingesta Elasticsearch 
+- [ ] Bloque D — IA conversacional (Anthropic API) 
+- [ ] Bloque E — Notificaciones tiempo real (WebSocket + Telegram bot) 
+- [ ] Bloque F — ML con PySpark MLlib (
+- [ ] Bloque G — Dashboards Grafana 
+- [ ] Bloque H — Frontend + integración 
+- [ ] Bloque I — Memoria académica   
